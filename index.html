@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>カレンダー</title>
+
+<style>
+:root{
+  --cat-talk:#e8a4b8;
+  --cat-study:#a8cbb7;
+  --cat-online:#a9c7e8;
+  --cat-session:#f1dd8b;
+  --cat-other:#c8a2c8;
+}
+
+body{font-family:sans-serif;margin:20px;}
+
+.top-bar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  margin-bottom:15px;
+}
+
+.controls{display:flex;align-items:center;gap:8px;}
+select,button{padding:5px 10px;font-size:14px;}
+
+.legend{display:flex;gap:15px;flex-wrap:wrap;align-items:center;}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:13px;}
+.legend-color{width:16px;height:16px;border-radius:5px;}
+
+.calendar{
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:5px;
+}
+
+.day{
+  border:1px solid #ccc;
+  min-height:110px;
+  padding:5px;
+  font-size:12px;
+}
+
+.day-number{
+  font-weight:bold;
+  margin-bottom:5px;
+}
+
+.event{
+  margin-bottom:3px;
+  padding:3px;
+  border-radius:6px;
+  font-size:11px;
+  color:#333;
+}
+</style>
+</head>
+
+<body>
+
+<div class="top-bar">
+
+  <div class="controls">
+    <button onclick="changeMonth(-1)">◀</button>
+    <select id="yearSelect"></select>年
+    <select id="monthSelect"></select>月
+    <button onclick="changeMonth(1)">▶</button>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-color" style="background:var(--cat-talk)"></div>講演会
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background:var(--cat-study)"></div>勉強会・交流会
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background:var(--cat-online)"></div>オンラインセミナー
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background:var(--cat-session)"></div>個別セッション
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background:var(--cat-other)"></div>その他
+    </div>
+  </div>
+
+</div>
+
+<div id="calendar" class="calendar"></div>
+
+<script>
+const COLORS={
+  "講演会":"var(--cat-talk)",
+  "勉強会・交流会":"var(--cat-study)",
+  "オンラインセミナー":"var(--cat-online)",
+  "個別セッション":"var(--cat-session)",
+  "その他":"var(--cat-other)"
+};
+
+// ★ 開始終了時間追加
+const events=[
+  {date:"2026-02-10", start:"09:00", end:"10:30", title:"朝の講演", type:"講演会"},
+  {date:"2026-02-10", start:"13:00", end:"14:00", title:"午後の講演", type:"講演会"},
+  {date:"2026-02-10", start:"11:00", end:"12:00", title:"勉強会", type:"勉強会・交流会"},
+  {date:"2026-02-15", start:"18:00", end:"19:30", title:"DX交流会", type:"勉強会・交流会"}
+];
+
+let currentDate=new Date();
+
+function initSelectors(){
+  const y=document.getElementById("yearSelect");
+  const m=document.getElementById("monthSelect");
+
+  for(let i=2024;i<=2030;i++){
+    let op=document.createElement("option");
+    op.value=i;op.textContent=i;y.appendChild(op);
+  }
+  for(let i=1;i<=12;i++){
+    let op=document.createElement("option");
+    op.value=i-1;op.textContent=i;m.appendChild(op);
+  }
+
+  y.value=currentDate.getFullYear();
+  m.value=currentDate.getMonth();
+
+  y.onchange=updateCalendar;
+  m.onchange=updateCalendar;
+}
+
+function generateCalendar(year,month){
+  const cal=document.getElementById("calendar");
+  cal.innerHTML="";
+
+  const first=new Date(year,month,1).getDay();
+  const last=new Date(year,month+1,0).getDate();
+
+  for(let i=0;i<first;i++){
+    cal.appendChild(document.createElement("div"));
+  }
+
+  for(let d=1;d<=last;d++){
+    const dayDiv=document.createElement("div");
+    dayDiv.className="day";
+
+    const num=document.createElement("div");
+    num.className="day-number";
+    num.textContent=d;
+    dayDiv.appendChild(num);
+
+    const dateStr=`${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+
+    // ★ 同日イベント抽出＋時間順ソート
+    const dailyEvents = events
+      .filter(e=>e.date===dateStr)
+      .sort((a,b)=>a.start.localeCompare(b.start));
+
+    dailyEvents.forEach(e=>{
+      const ev=document.createElement("div");
+      ev.className="event";
+      ev.style.background=COLORS[e.type]||"#eee";
+      ev.textContent=`${e.start}-${e.end} ${e.title}`;
+      dayDiv.appendChild(ev);
+    });
+
+    cal.appendChild(dayDiv);
+  }
+}
+
+function updateCalendar(){
+  const y=parseInt(document.getElementById("yearSelect").value);
+  const m=parseInt(document.getElementById("monthSelect").value);
+  generateCalendar(y,m);
+}
+
+function changeMonth(offset){
+  currentDate.setMonth(currentDate.getMonth()+offset);
+  document.getElementById("yearSelect").value=currentDate.getFullYear();
+  document.getElementById("monthSelect").value=currentDate.getMonth();
+  updateCalendar();
+}
+
+initSelectors();
+updateCalendar();
+</script>
+
+</body>
+</html>
